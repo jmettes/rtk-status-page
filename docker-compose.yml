@@ -1,0 +1,36 @@
+version: '3'
+
+services:
+  rtkrcv:
+    container_name: rtkrcv
+    build: 
+      context: rtkrcv
+      dockerfile: Dockerfile
+      args:
+        - http_proxy
+        - https_proxy
+    volumes:
+      - ./logs:/logs
+    command: >
+      /bin/sh -c "sed -i 's/STATION/'$${STATION}'/' single.conf && ./rtkrcv -o single.conf -s -d /dev/tty"
+    environment:
+      - STATION=${STATION}
+    tty: true  # rtkrcv needs tty
+
+  logger:
+    container_name: logger
+    build:
+      context: logger
+      args:
+        - http_proxy
+        - https_proxy
+    volumes:
+      - ./logs:/logs
+      - ~/.aws:/root/.aws:ro
+    environment:
+      - STATION=${STATION}
+      - DBHOST=${DBHOST}
+      - DBPT=${DBPT}
+      - DBU=${DBU}
+      - DBPW=${DBPW}
+      - DBNAME=${DBNAME}
