@@ -1,0 +1,1 @@
+CREATE TABLE rtkstatuspage(station VARCHAR(50) PRIMARY KEY, gpst VARCHAR(50), x VARCHAR(50), y VARCHAR(50), z VARCHAR(50));

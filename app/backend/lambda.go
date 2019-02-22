@@ -24,19 +24,9 @@ type Response struct {
 type Status struct {
     Station string `json:"station"`
     Gpst string `json:"gpst"`
-    Ebaseline string `json:"ebaseline"`
-    Nbaseline string `json:"nbaseline"`
-    Ubaseline string `json:"ubaseline"`
-    Q string `json:"q"`
-    Ns string `json:"ns"`
-    Sde string `json:"sde"`
-    Sdn string `json:"sdn"`
-    Sdu string `json:"sdu"`
-    Sden string `json:"sden"`
-    Sdnu string `json:"sdnu"`
-    Sdue string `json:"sdue"`
-    Age string `json:"age"`
-    Ratio string `json:"ratio"`
+    X string `json:"x"`
+    Y string `json:"y"`
+    Z string `json:"z"`
 }
 
 func Handler() (Response, error) {
@@ -56,10 +46,10 @@ func Handler() (Response, error) {
     }
 
     statuses := []Status{}
-    var station, gpst, ebaseline, nbaseline, ubaseline, q, ns, sde, sdn, sdu, sden, sdnu, sdue, age, ratio string
+    var station, gpst, x, y, z string
     for rows.Next() {
-        rows.Scan(&station, &gpst, &ebaseline, &nbaseline, &ubaseline, &q, &ns, &sde, &sdn, &sdu, &sden, &sdnu, &sdue, &age, &ratio)
-        statuses = append(statuses, Status{station, gpst, ebaseline, nbaseline, ubaseline, q, ns, sde, sdn, sdu, sden, sdnu, sdue, age, ratio})
+        rows.Scan(&station, &gpst, &x, &y, &z)
+        statuses = append(statuses, Status{station, gpst, x, y, z})
     }
 
     statusesJson, err := json.Marshal(statuses)

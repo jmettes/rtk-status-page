@@ -18,17 +18,14 @@ var user     = os.Getenv("DBU")
 var password = os.Getenv("DBPW")
 var dbname   = os.Getenv("DBNAME")
 
-func updateTable(db *sql.DB, gpst1 string, gpst2 string,
-    ebaseline string, nbaseline string, ubaseline string, q string,
-    ns string, sde string, sdn string, sdu string, sden string, sdnu string,
-    sdue string, age string, ratio string) {
+func updateTable(db *sql.DB, gpst string, x string, y string, z string) {
 
     sqlStatement := `
-    INSERT INTO rtkstatuspage (station, gpst, ebaseline, nbaseline, ubaseline, q, ns, sde, sdn, sdu, sden, sdnu, sdue, age, ratio)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+    INSERT INTO rtkstatuspage (station, gpst, x, y, z)
+    VALUES ($1, $2, $3, $4, $5)
     ON CONFLICT ON CONSTRAINT rtkstatuspage_pkey
-    DO UPDATE SET station = $1, gpst = $2, ebaseline = $3, nbaseline = $4, ubaseline = $5, q = $6, ns = $7, sde = $8, sdn = $9, sdu = $10, sden = $11, sdnu = $12, sdue = $13, age = $14, ratio=$15`
-    _, err := db.Exec(sqlStatement, station, gpst1 + gpst2, ebaseline, nbaseline, ubaseline, q, ns, sde, sdn, sdu, sden, sdnu, sdue, age, ratio)
+    DO UPDATE SET station = $1, gpst = $2, x = $3, y = $4, z = $5`
+    _, err := db.Exec(sqlStatement, station, gpst, x, y, z)
     if err != nil {
       panic(err)
     }
@@ -64,13 +61,9 @@ func main() {
             continue
         }
 
-        gpst1, gpst2, ebaseline, nbaseline, ubaseline, q, ns, sde, sdn, sdu,
-            sden, sdnu, sdue, age, ratio := fields[0], fields[1], fields[2],
-                fields[3], fields[4], fields[5], fields[6], fields[7], fields[8],
-                fields[9], fields[10], fields[11], fields[12], fields[13], fields[14]
-
-        go updateTable(db, gpst1, gpst2, ebaseline, nbaseline, ubaseline, q, ns, sde, sdn, sdu, sden,
-            sdnu, sdue, age, ratio)
+        gpst1, gpst2, xecef, yecef, zecef := fields[0], fields[1], fields[2],
+                fields[3], fields[4] 
+        go updateTable(db, gpst1 + " " + gpst2, xecef, yecef, zecef)
     }
     log.Println(err)
 }

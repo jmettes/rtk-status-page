@@ -19,8 +19,3 @@ COPY single.conf /single.conf
 
 # Copy our static executable
 COPY --from=builder /rtkrcv/gcc/rtkrcv /rtkrcv
-
-
-
-#RUN chmod +x rtkrcv
-#RUN ls
