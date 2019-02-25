@@ -43,7 +43,7 @@ spec:
     volumeMounts:
     - name: logs
       mountPath: /logs
-    command: ["/bin/sh"]
+    command: ["/bin/sh", "-c"]
     env:
     - name: STATIONS
       value: ALIC7;BULA7
@@ -52,5 +52,12 @@ spec:
         secretKeyRef:
           name: rtk-status-page-secret
           key: AUSCORS
-    args: ["-c", "sed -i 's/AUSCORS/'$(AUSCORS)'/' single.conf && export STATIONS=\"$(STATIONS)\" && for station in $$(echo ${STATIONS} | tr ';' ' '); do echo ${station} && cp single.conf ${station}.conf && sed -i 's/STATION/'${station}'/' ${station}.conf && screen -dm -S ${station} ./rtkrcv -s -o ${station}.conf; done && ./rtkrcv"]
+    args:
+      - sed -i 's/AUSCORS/'$(AUSCORS)'/' single.conf &&
+        export STATIONS="$(STATIONS)" &&
+        for station in $$(echo ${STATIONS} | tr ';' ' '); do echo ${station} &&
+            cp single.conf ${station}.conf &&
+            sed -i 's/STATION/'${station}'/' ${station}.conf &&
+            screen -dm -S ${station} ./rtkrcv -s -o ${station}.conf; done &&
+        ./rtkrcv
 
