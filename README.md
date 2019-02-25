@@ -1,12 +1,8 @@
-# build images (for now)
+## build images (for now)
 `docker-compose build`
 
-# run the logger image
-```
-docker run -e "STATION=ALIC7" -e "DBHOST=my-url-to-db" -e "DBPT=5432" -e "DBU=postgres" -e "DBPW=my-db-password" -e "DBNAME=rtkstatuspage" --mount src=$(pwd)/logs,target=/logs,type=bind -t rtk-status-page_logger
-```
+## create kubernetes secret
+`kubectl create secret generic rtk-status-page-secret --from-literal=DBPW="my-db-password" --from-literal=AUSCORS="MY-USER:MY-PASSWORD@auscors.ga.gov.au:2101" --from-literal=DBHOST="MY-DB-HOST.ap-southeast-2.rds.amazonaws.com"`
 
-# run rtklib image
-```
-docker run -e "STATION=ALIC7" -e "DBHOST=my-url-to-db" -e "DBPT=5432" -e "DBU=postgres" -e "DBPW=my-db-password" -e "DBNAME=rtkstatuspage" -it --mount src=$(pwd)/logs,target=/logs,type=bind rtk-status-page_rtkrcv sh -c "sed -i 's/STATION/ALIC7/' single.conf && sed -i 's/AUSCORS/MYUSERNAME:MYPASSWORD@auscors.ga.gov.au:2101/' single.conf && ./rtkrcv -o single.conf -s -d /dev/tty"
-```
+## deploy containers to kubernetes
+`kubectl create -f two-container-pod.yaml`

@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: two-containers
+spec:
+
+  restartPolicy: Never
+
+  volumes:
+  - name: logs
+    emptyDir: {}
+
+  containers:
+
+  - name: "rtk-status-page-logger-sha256"
+    image: "asia.gcr.io/crucial-citron-232505/rtk-status-page_logger@sha256:3dfb6c83e819b606e77d0298e002ef21f482501953dbfd14117b442513dbadd3"
+    volumeMounts:
+    - name: logs
+      mountPath: /logs
+    env:
+    - name: STATION
+      value: "ALIC7"
+    - name: DBHOST
+      valueFrom:
+        secretKeyRef:
+          name: rtk-status-page-secret
+          key: DBHOST
+    - name: DBPT
+      value: "5432"
+    - name: DBU
+      value: "client"
+    - name: DBPW
+      valueFrom:
+        secretKeyRef:
+          name: rtk-status-page-secret
+          key: DBPW
+    - name: DBNAME
+      value: "rtkstatuspage"
+
+  - name: "rtk-status-page-rtkrcv-sha256"
+    image: "asia.gcr.io/crucial-citron-232505/rtk-status-page_rtkrcv@sha256:b212c96d76c00813c86da253cfe0b6dbf78d1e43195372df94c112d51156c3e2"
+    tty: true
+    volumeMounts:
+    - name: logs
+      mountPath: /logs
+    command: ["/bin/sh"]
+    env:
+    - name: AUSCORS
+      valueFrom:
+        secretKeyRef:
+          name: rtk-status-page-secret
+          key: AUSCORS
+    args: ["-c", "sed -i 's/STATION/ALIC7/' single.conf && sed -i 's/AUSCORS/'$(AUSCORS)'/' single.conf && ./rtkrcv -o single.conf -s -d /dev/tty"]
+
