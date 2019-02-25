@@ -9,16 +9,17 @@ import (
 
     "os"
     "strconv"
+    "sync"
 )
 
-var station  = os.Getenv("STATION")
+var stationsEnv  = os.Getenv("STATIONS")
 var host     = os.Getenv("DBHOST")
 var port, _  = strconv.ParseInt(os.Getenv("DBPT"), 0, 64)
 var user     = os.Getenv("DBU")
 var password = os.Getenv("DBPW")
 var dbname   = os.Getenv("DBNAME")
 
-func updateTable(db *sql.DB, gpst string, x string, y string, z string) {
+func updateTable(db *sql.DB, station string, gpst string, x string, y string, z string) {
 
     sqlStatement := `
     INSERT INTO rtkstatuspage (station, gpst, x, y, z)
@@ -50,20 +51,29 @@ func main() {
 
     fmt.Println("Successfully connected!")
 
-    // skip header
-    t, err := tail.TailFile("logs/" + station + ".pos", tail.Config{Follow: true, ReOpen: true})
-    for line := range t.Lines {
-        fields := strings.Fields(line.Text)
-        log.Println(fields)
+    stations := strings.Split(stationsEnv, ";")
+    var wg sync.WaitGroup
 
-        // skip comments
-        if fields[0] == "%" {
-            continue
-        }
-
-        gpst1, gpst2, xecef, yecef, zecef := fields[0], fields[1], fields[2],
-                fields[3], fields[4] 
-        go updateTable(db, gpst1 + " " + gpst2, xecef, yecef, zecef)
+    for _, station := range stations {
+        log.Println("logging ", station)
+        wg.Add(1)
+        go (func(station string) {
+            defer wg.Done()
+            t, err := tail.TailFile("logs/" + station + ".pos", tail.Config{Follow: true, ReOpen: true})
+            for line := range t.Lines {
+                fields := strings.Fields(line.Text)
+                log.Println(station, fields)
+                // skip comments
+                if fields[0] == "%" {
+                    continue
+                }
+                gpst1, gpst2, xecef, yecef, zecef := fields[0], fields[1], fields[2],
+                        fields[3], fields[4] 
+                go updateTable(db, station, gpst1 + " " + gpst2, xecef, yecef, zecef)
+            }
+            log.Println(err)
+        })(station)
     }
-    log.Println(err)
+    wg.Wait()
+
 }

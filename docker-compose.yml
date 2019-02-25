@@ -9,13 +9,6 @@ services:
       args:
         - http_proxy
         - https_proxy
-    volumes:
-      - ./logs:/logs
-    command: >
-      /bin/sh -c "sed -i 's/STATION/'$${STATION}'/' single.conf && ./rtkrcv -o single.conf -s -d /dev/tty"
-    environment:
-      - STATION=${STATION}
-    tty: true  # rtkrcv needs tty
 
   logger:
     container_name: logger
@@ -24,13 +17,3 @@ services:
       args:
         - http_proxy
         - https_proxy
-    volumes:
-      - ./logs:/logs
-      - ~/.aws:/root/.aws:ro
-    environment:
-      - STATION=${STATION}
-      - DBHOST=${DBHOST}
-      - DBPT=${DBPT}
-      - DBU=${DBU}
-      - DBPW=${DBPW}
-      - DBNAME=${DBNAME}

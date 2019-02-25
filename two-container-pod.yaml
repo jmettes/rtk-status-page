@@ -12,14 +12,14 @@ spec:
 
   containers:
 
-  - name: "rtk-status-page-logger-sha256"
-    image: "asia.gcr.io/crucial-citron-232505/rtk-status-page_logger@sha256:3dfb6c83e819b606e77d0298e002ef21f482501953dbfd14117b442513dbadd3"
+  - name: "rtk-status-page-logger"
+    image: "asia.gcr.io/crucial-citron-232505/rtk-status-page_logger:latest"
     volumeMounts:
     - name: logs
       mountPath: /logs
     env:
-    - name: STATION
-      value: "ALIC7"
+    - name: STATIONS
+      value: ALIC7;BULA7
     - name: DBHOST
       valueFrom:
         secretKeyRef:
@@ -37,18 +37,20 @@ spec:
     - name: DBNAME
       value: "rtkstatuspage"
 
-  - name: "rtk-status-page-rtkrcv-sha256"
-    image: "asia.gcr.io/crucial-citron-232505/rtk-status-page_rtkrcv@sha256:b212c96d76c00813c86da253cfe0b6dbf78d1e43195372df94c112d51156c3e2"
+  - name: "rtk-status-page-rtkrcv"
+    image: "asia.gcr.io/crucial-citron-232505/rtk-status-page_rtkrcv:latest"
     tty: true
     volumeMounts:
     - name: logs
       mountPath: /logs
     command: ["/bin/sh"]
     env:
+    - name: STATIONS
+      value: ALIC7;BULA7
     - name: AUSCORS
       valueFrom:
         secretKeyRef:
           name: rtk-status-page-secret
           key: AUSCORS
-    args: ["-c", "sed -i 's/STATION/ALIC7/' single.conf && sed -i 's/AUSCORS/'$(AUSCORS)'/' single.conf && ./rtkrcv -o single.conf -s -d /dev/tty"]
+    args: ["-c", "sed -i 's/AUSCORS/'$(AUSCORS)'/' single.conf && export STATIONS=\"$(STATIONS)\" && for station in $$(echo ${STATIONS} | tr ';' ' '); do echo ${station} && cp single.conf ${station}.conf && sed -i 's/STATION/'${station}'/' ${station}.conf && screen -dm -S ${station} ./rtkrcv -s -o ${station}.conf; done && ./rtkrcv"]
 

@@ -15,6 +15,8 @@ RUN cd /rtkrcv/gcc && make clean && make
 
 FROM alpine:latest
 
+RUN apk add screen
+
 COPY single.conf /single.conf
 
 # Copy our static executable
