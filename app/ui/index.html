@@ -1,0 +1,114 @@
+<html>
+<head>
+  <title>AUSCORS accuracy</title>
+   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css"
+   integrity="sha512-07I2e+7D8p6he1SIM+1twR5TIrhUQn9+I6yjqD53JQjFiMf8EtC93ty0/5vJTZGF8aAocvHYNEDJajGdNx1IsQ=="
+   crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"
+   integrity="sha512-A7vV8IFfih/D732iSSKi20u/ooOfj/AGehOKq0f4vLT1Zr2Y+RX7C+w8A1gaSasGtRUZpF/NZgzSAu4/Gc41Lg=="
+   crossorigin=""></script>
+  <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+<!--  <script src="leaflet.heat.js"></script>-->
+<!--  <script src="proj4.js"></script>-->
+  <script src="leaflet-idw.js"></script>
+  <script src="true-stations.js"></script>
+  <style>
+    #map{ height: 100% }
+  </style>
+</head>
+<body>
+ 
+  <div id="map"></div>
+ 
+  <script>
+  var a    = 6378137 //wgs84.RADIUS;
+  var f    = 1/298.257223563 //wgs84.FLATTENING;
+  var b    = a*(1-f); //wgs84.POLAR_RADIUS;
+  var asqr = a*a;
+  var bsqr = b*b;
+  
+  var e = Math.sqrt((asqr-bsqr)/asqr);
+  var eprime = Math.sqrt((asqr-bsqr)/bsqr);
+
+  // source: https://github.com/lakowske/ecef-projector/blob/master/index.js
+  function ECEFToLLA(X, Y, Z) {
+    //Auxiliary values first
+    var p = Math.sqrt(X*X + Y*Y);
+    var theta = Math.atan((Z*a)/(p*b));
+
+    var sintheta = Math.sin(theta);
+    var costheta = Math.cos(theta);
+
+    var num = Z + eprime * eprime * b * sintheta * sintheta * sintheta;
+    var denom = p - e * e * a * costheta * costheta * costheta;
+
+    //Now calculate LLA
+    var latitude  = Math.atan(num/denom);
+    var longitude = Math.atan(Y/X);
+    var N = getN(latitude);
+    var altitude  = (p / Math.cos(latitude)) - N;
+
+    if (X < 0 && Y < 0) {
+        longitude = longitude - Math.PI;
+    }
+
+    if (X < 0 && Y > 0) {
+        longitude = longitude + Math.PI;
+    }
+
+    return [degrees(latitude), degrees(longitude), altitude];
+  }
+  function degrees(angle) {
+    return angle * (180 / Math.PI);
+  }
+  function getN(latitude) {
+    var sinlatitude = Math.sin(latitude);
+    var denom = Math.sqrt(1-e*e*sinlatitude*sinlatitude);
+    var N = a / denom;
+    return N;
+  }
+
+  // initialize the map
+  var map = L.map('map').setView([-27.833, 133.583], 4);
+  // load a tile layer
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    {
+      attribution: 'Map data &copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
+      maxZoom: 17,
+      minZoom: 1
+    }).addTo(map);
+    
+  map.setZoom(4);
+  // taken from: https://github.com/JoranBeaufort/Leaflet.idw
+  // http://www.geonet.ch/leaflet-idw/
+  var idw = L.idwLayer([],{
+      opacity: 0.3,
+      maxZoom: 18,
+      cellSize: 10,
+      exp: 3,
+      max: 10
+  }).addTo(map);
+
+  function update() {
+    $.getJSON("https://2gk9xit9gh.execute-api.ap-southeast-2.amazonaws.com/dev",function(data){
+      var locations = data.map(function(station) {
+        var location = ECEFToLLA(parseFloat(station['x']), parseFloat(station['y']), parseFloat(station['z']));
+        var trueStation = trueStations[station['station']]
+        var error = Math.sqrt(Math.pow(parseFloat(station['x']) - trueStation['x'], 2) +
+                              Math.pow(parseFloat(station['y']) - trueStation['y'], 2) +
+                              Math.pow(parseFloat(station['z']) - trueStation['z'], 2))
+        //var error = Math.floor(Math.random() * 1000);
+        return [location[0], location[1], error];
+      });
+
+      idw.setLatLngs(locations)
+    });
+  }
+
+  update();
+  setInterval(update, 1000);
+
+ 
+  </script>
+</body>
+</html>
