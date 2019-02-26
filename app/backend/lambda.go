@@ -19,6 +19,7 @@ var dbname   = os.Getenv("DBNAME")
 type Response struct {
 	StatusCode int    `json:"statusCode"`
 	Body       string `json:"body"`
+    Headers    map[string]string `json:"headers"`
 }
 
 type Status struct {
@@ -57,6 +58,7 @@ func Handler() (Response, error) {
 	return Response{
 		StatusCode: 200,
 		Body:       string(statusesJson),
+        Headers:    map[string]string{"Access-Control-Allow-Origin": "*"},
 	}, nil
 }
 
