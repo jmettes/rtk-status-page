@@ -4,15 +4,10 @@
    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css"
    integrity="sha512-07I2e+7D8p6he1SIM+1twR5TIrhUQn9+I6yjqD53JQjFiMf8EtC93ty0/5vJTZGF8aAocvHYNEDJajGdNx1IsQ=="
    crossorigin=""/>
-  <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"
-   integrity="sha512-A7vV8IFfih/D732iSSKi20u/ooOfj/AGehOKq0f4vLT1Zr2Y+RX7C+w8A1gaSasGtRUZpF/NZgzSAu4/Gc41Lg=="
-   crossorigin=""></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.4.0/leaflet.js"></script>
   <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
-<!--  <script src="leaflet.heat.js"></script>-->
-<!--  <script src="proj4.js"></script>-->
-  <script src="leaflet-idw.js"></script>
-<!--  <script src="leaflet-colorbar.js"></script>-->
   <script src="true-stations.js"></script>
+  <script src="chroma.min.js"></script>
   <link rel="stylesheet" href="colorbar.css" />
   <style>
     #map{ height: 100% }
@@ -81,15 +76,6 @@
     }).addTo(map);
     
   map.setZoom(4);
-  // taken from: https://github.com/JoranBeaufort/Leaflet.idw
-  // http://www.geonet.ch/leaflet-idw/
-  var idw = L.idwLayer([],{
-      opacity: 0.3,
-      maxZoom: 18,
-      cellSize: 10,
-      exp: 3,
-      max: 10
-  }).addTo(map);
 
   var Colorbar = L.control({position: 'bottomleft'});
   Colorbar.onAdd = function (map) {
@@ -115,26 +101,33 @@
   };
   Colorbar.addTo(map);
 
+  markers = {};
+  colormap = chroma.scale(['#000066', 'blue', 'cyan', 'lime', 'yellow', 'orange', 'red', 'Maroon', '#660066', '#990099', '#ff66ff']).domain([0, 10]);
   function update() {
     $.getJSON("https://2gk9xit9gh.execute-api.ap-southeast-2.amazonaws.com/dev",function(data){
-      var locations = data.map(function(station) {
-        var location = ECEFToLLA(parseFloat(station['x']), parseFloat(station['y']), parseFloat(station['z']));
+      data.map(function(station) {
         var trueStation = trueStations[station['station']]
+        var trueLocation = ECEFToLLA(trueStation['x'], trueStation['y'], trueStation['z'])
         var error = Math.sqrt(Math.pow(parseFloat(station['x']) - trueStation['x'], 2) +
                               Math.pow(parseFloat(station['y']) - trueStation['y'], 2) +
                               Math.pow(parseFloat(station['z']) - trueStation['z'], 2))
-        //var error = Math.floor(Math.random() * 1000);
-        return [location[0], location[1], error];
-      });
 
-      idw.setLatLngs(locations)
+        if (markers[station['station']]) {
+            markers[station['station']].setStyle({color: colormap(error).hex()});
+        } else {
+            markers[station['station']] = L.circleMarker([trueLocation[0], trueLocation[1]],
+                                                        {radius: 5,
+                                                         fillOpacity: 0.8,
+                                                         color: colormap(error).hex(),
+                                                         opacity: 0.8}).addTo(map);
+        }
+      });
     });
   }
 
   update();
   setInterval(update, 1000);
 
- 
   </script>
 </body>
 </html>
