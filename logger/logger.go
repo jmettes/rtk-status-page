@@ -6,6 +6,7 @@ import (
     "database/sql"
     "fmt"
     _ "github.com/lib/pq"
+    "time"
 
     "os"
     "strconv"
@@ -42,6 +43,13 @@ func main() {
     if err != nil {
       panic(err)
     }
+
+    // https://making.pusher.com/production-ready-connection-pooling-in-go/
+    db.SetConnMaxLifetime(30 * time.Minute)
+    db.SetMaxOpenConns(40)
+    // https://serverfault.com/questions/862387/aws-rds-connection-limits
+    db.SetMaxIdleConns(40)
+
     defer db.Close()
 
     err = db.Ping()
